@@ -1,0 +1,69 @@
+from numpy import fix
+#import pandas as pd
+import os.path
+
+import sys
+
+def get_base_prefix_compat():
+    """Get base/real prefix, or sys.prefix if there is none."""
+    return getattr(sys, "base_prefix", None) or getattr(sys, "real_prefix", None) or sys.prefix
+
+def in_virtualenv():
+    return get_base_prefix_compat() != sys.prefix
+
+
+
+csv_filepath = input("Please enter file path: ")
+
+while not os.path.isfile(csv_filepath):        
+    print("Error: That is not a valid file, try again...")
+    csv_filepath = input("Please enter a valid file path: ")
+
+
+df = pd.read_csv(csv_filepath)
+print(df)
+
+#store intervals in a dictionary
+file_path = r"C:\Users\katie\OneDrive\Documents\Engagement_intervals.csv"
+dict_from_csv = pd.read_csv(file_path, header=None, index_col=0, squeeze=False).to_dict()
+print(dict_from_csv)
+print('---------------------------------------------------------------')
+
+
+unique_labels = df['Label'].unique()
+times = {}
+
+start_interval = int(input("start interval: "))
+end_interval = int(input('end interval: '))
+total_time = (end_interval - start_interval + 1)*10
+print('---------------------------------------------------------------')
+
+replace_list = ["bt/peers", "instructor/screen/on task"]
+
+fixed_labels = sorted(list(df['Label'].unique()))
+
+# restrict dataframe (df) to start and end intervals. This is if the coder coded data before or after start and end intervals respectively
+df = df[(df['Interval'] >= start_interval)
+                      & (df['Interval'] <= end_interval)]
+
+# create a column called 'time held' which has the time the button is depressed.
+# which is the time released column - the time pressed column (vectorized)
+df['time held'] = df['Time Released'] - df['Time Pressed']
+
+#iterate through each label to get the total time in seconds
+for label in unique_labels:
+    # sum of the values of each label
+    label_sum = df.loc[df['Label'] == label , 'time held'].sum()
+    print(label + " total time: " + str(round(label_sum,4)) + ' seconds')
+    print(label + " percentage: " + str(round((label_sum/total_time) * 100 ,4)) + ' %' )
+    # add separator
+    print('---------------------------------------------------------------')
+
+# add off target label
+# get off target time and peprcentage
+# add separator
+off_target_time = round(total_time - df['time held'].sum(),4)
+off_target_percentage = round((off_target_time/total_time) * 100 ,4)
+print('off target total time: ' + str(off_target_time) + ' seconds' )
+print('off target percentage: ' + str(off_target_percentage) + ' %' )
+
